@@ -1,35 +1,72 @@
 # A tic-tac-toe game where user plays against unbeatable AI
-
+''' TODO:
+1. Refactor code
+- make a turn loop which alternates turns
+2. Let user choose symbol
+3. Format board
+4. Add GUI or web UI
+'''
 import copy
+from termcolor import colored
 
 def main():
     print("Welcome to Tic Tac Toe! You may enter 'Control-C' at any time to quit.")
     game = TicTacToeGame()
-    winner = game.start()
+    did_quit = game.configure_settings()
+    if not did_quit:
+        winner = game.start()
+    else:
+        winner = "quit"
     end_game_message(winner)
 
 def end_game_message(winner):
     if winner == "quit":
         print("\nUser has quit the game, which the AI would've won anyways")
+    elif winner == "tie":
+        print("\nThe game finished in a tie!")
     else:
         print(winner + " has won the game!")
 
 class TicTacToeGame:
 
     def __init__(self):
+        self.user_order = 1
         self.winner = None
         self.current_player = 'X'
         self.symbols = {'user': 'X', 'ai': 'O'}
         self.board = self.initialize_board()
-        self.draw_board()
 
     def initialize_board(self):
         return range(9)
 
-    def draw_board(self):
-        print(self.board[0:3])
-        print(self.board[3:6])
-        print(self.board[6:9])
+    def configure_settings(self):
+        user_order_valid= False
+        while not user_order_valid:
+            try:
+                order = int(str(input("Would you like to go first or second? Enter a '1' or a '2':  ")))
+                if order == 1 or order == 2:
+                    user_order_valid = True
+                    self.user_order = order
+                else:
+                    print("\n Please enter a 1 or a 2")
+            except KeyboardInterrupt:
+                return "quit"
+            except:
+                self.error_message()
+
+    def draw_board(self, index, symbol):
+        if index != -1: self.board[index] = symbol
+        col_spacing = 3
+        for i in range(9):
+            ch = str(self.board[i])
+            if ch == 'O': color = 'blue'
+            elif ch == 'X': color = 'red'
+            else: color = 'white'
+
+            if (i+1) % 3 == 0:
+                print(colored(ch,color) + "  ")
+            else:
+                print colored(ch,color) + "  ",
         print("\n")
 
     def get_score(self, winner):
@@ -61,23 +98,29 @@ class TicTacToeGame:
     # or "quit" if user quit
     def start(self):
         user_has_quit = False
+        print("\n")
+        self.draw_board(-1, -1)
+
+        # if user chose to go second, let AI make a move first
+        if self.user_order == 2:
+            print("AI is calculating its move...")
+            ai_move = self.ai_turn()
+            self.draw_board(ai_move,'O')
+            end = self.check_end_game(self.board)
+            if end: return end
+
         while not (self.winner or user_has_quit):
+            # user move
             user_move = self.user_turn()
-
-            # check if user quit
-            if user_move == "quit":
-                return "quit"
-
-            # user turn
-            self.board[user_move] = 'X'
-            self.draw_board()
+            if user_move == "quit": return "quit"
+            self.draw_board(user_move,'X')
             end = self.check_end_game(self.board)
             if end: return end
 
             # ai turn
+            print("AI is calculating its move...")
             ai_move = self.ai_turn()
-            self.board[ai_move] = 'O'
-            self.draw_board()
+            self.draw_board(ai_move, 'O')
             end = self.check_end_game(self.board)
             if end: return end
 
@@ -191,7 +234,7 @@ class TicTacToeGame:
 
     def error_message(self):
         print("\n*** Oops! Please enter a valid move!***")
-        self.draw_board()
+        self.draw_board(-1,-1)
 
 
 main()
